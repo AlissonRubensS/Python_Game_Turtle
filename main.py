@@ -1,103 +1,152 @@
 import turtle
 import random
 
-arena_speed = 10
-step = 30
-start = False
+stamina = 100
+velocity = 0
+score = 0
+step = 10
 
 
 def MainLooping():
-    while True:
-        MapLooping(arena, arena, enemy, enemy2)
-    wd.ontimer(MapLooping, 60 // 1000)
+    global stamina, score, velocity
+    score_pen.clear()
+    stamina_pen.clear()
+
+    MapLooping(arena)
+    if velocity != 0:
+        ObjDown(obstacle1)
+        ObjDown(obstacle2)
+        score += 10
+        stamina -= 1
+
+    if stamina == 0:
+        velocity = 0
+        stamina = 100
+        print("Acabou a gasosa =(")
+
+    WriteScreen(score_pen, f"Pontuação {score}")
+    WriteScreen(stamina_pen, f"Energia: {stamina}")
+
+    wd.update()
+    wd.ontimer(MainLooping, 1000 // 60)
 
 
+def MapLooping(scenery):
+    scenery.setpos(scenery.xcor(), scenery.ycor() - velocity)
+    if scenery.ycor() < -800:
+        scenery.speed(0)
+        scenery.setpos(0, scenery.ycor() + 700)
+        scenery.speed(10)
 
-def PlayerInitial(turtle_player):
-    turtle_player.goto(0, -300)
+
+def ObjDown(obj_turtle):
+    global velocity
+
+    if obj_turtle.ycor() < -600:
+        RandomPos(obj_turtle)
+
+    if CollisionPlayer(obstacle1, 85, 90, 0, 0):
+        PlayerInitial()
+        velocity = 0 #Controla a velocidade do jogo
+
+    obj_turtle.fd(step)
+
+
+def CollisionPlayer(obj, margin_left, margin_right, margin_up, margin_down):
+    if (player.xcor() - 45 <= obj.xcor() + margin_right) and (player.xcor() + 75 >= obj.xcor() - margin_left):
+        if -230 >= obj.ycor() >= -300:
+            print("KABUUUUUUUUUM")
+            return True
+
+
+def Start():
+    global velocity
+    velocity = 15
 
 
 def RandomPos(obj_turtle):
-    obj_turtle.goto(random.randint(-200, 200), 400)
+    obj_turtle.goto(random.randint(-190, 190), random.randint(400, 700))
+
+
+def PlayerInitial():
+    player.goto(0, -300)
 
 
 def WalkRight():
     if player.xcor() < 245 and player.xcor() + step < 245:
         player.forward(step)
     else:
-        PlayerInitial(player)
+        PlayerInitial()
 
 
 def WalkLeft():
     if player.xcor() > -230 and player.xcor() - step > -230:
         player.backward(step)
     else:
-        PlayerInitial(player)
-
-
-def ObjDown(obj_turtle):
-    if obj_turtle.ycor() < -600:
-        obj_turtle.pen(shown=False, pensize=2, speed=0)
-        obj_turtle.goto(random.randint(-200, 200), 400)
-
-    if CollisionObj(obj_turtle, player, 25, 30):
-        PlayerInitial(player)
-
-    obj_turtle.fd(step)
+        PlayerInitial()
 
 
 def Enemies(turtle_enemies):
     turtle_enemies.pen(shown=True, pendown=False, speed=2)
-    turtle_enemies.shape("img/player.gif")
+    turtle_enemies.shape("img/obstacle.gif")
     turtle_enemies.setheading(270)
-    ObjDown(turtle_enemies)
 
 
-def MapLooping(arena_static, arena_movement, enemy_map, enemy_map2):
-    arena_static.setpos(arena.xcor(), arena.ycor() - 15)
-    arena_movement.setpos(arena.xcor(), arena.ycor() - 15)
-    Enemies(enemy_map)
-    Enemies(enemy_map2)
-    if arena_movement.ycor() < -800:
-        arena_movement.speed(0)
-        arena_movement.setpos(0, 80)
-        arena_movement.speed(arena_speed)
+def WriteScreen(pen, text):
+    pen.write(text, align="center", font=("Times", 18, "bold"))
 
 
-def CollisionObj(obj_one, obj_two, margin_x, margin_y):
-    if (obj_one.xcor() <= obj_two.xcor() + margin_x) and (obj_one.xcor() >= obj_two.xcor() - margin_x) and (obj_one.ycor() <= obj_two.ycor() + margin_y):
-        print("colidiu")
-        return True
+def PenWrite(obj, x, y):
+    obj.hideturtle()
+    obj.up()
+    obj.goto(x, y)
 
 
+#Configuração da Janela
 wd = turtle.Screen()
-wd.title('Ultra Surf')
+wd.title('Barquinho do Balocubaco')
 wd.setup(width=1000, height=800, starty=0)
 wd.addshape("img/background.gif")
 wd.addshape("img/player.gif")
+wd.addshape("img/obstacle.gif")
 
+#Cenário
 arena = turtle.Turtle()
 arena.shape('img/background.gif')
-arena.speed(arena_speed)
+arena.speed(10)
 arena.up()
 
+#Jogador
 player = turtle.Turtle()
 player.shape("img/player.gif")
 player.up()
-PlayerInitial(player)
+PlayerInitial()
 
+#Obstaculos
+obstacle1 = turtle.Turtle()
+obstacle1.pen(shown=False, pendown=False)
+RandomPos(obstacle1)
+Enemies(obstacle1)
 
-wd.onkey(WalkRight, 'Right')
-wd.onkey(WalkLeft, 'Left')
+obstacle2 = turtle.Turtle()
+obstacle2.pen(shown=False, pendown=False)
+RandomPos(obstacle2)
+Enemies(obstacle2)
+
+#Pontuação
+score_pen = turtle.Turtle()
+PenWrite(score_pen, 400, 300)
+
+#Energia
+stamina_pen = turtle.Turtle()
+PenWrite(stamina_pen, -400, 300)
+
+#Chamada das funções
+wd.onkeypress(WalkRight, 'Right')
+wd.onkeypress(WalkLeft, 'Left')
+wd.onkey(Start, "space")
 wd.listen()
-
-enemy = turtle.Turtle()
-enemy.pen(shown=False, pendown=False)
-RandomPos(enemy)
-
-enemy2 = turtle.Turtle()
-enemy2.pen(shown=False, pendown=False)
-RandomPos(enemy2)
+wd.tracer(0)
 
 MainLooping()
 wd.mainloop()
